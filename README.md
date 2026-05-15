@@ -738,35 +738,11 @@ python --version
 ```
 
 Si ves algo como `Python 3.11.4`, ya está listo. Si ves un error, instálalo:
-
-- **Windows:** Descarga el instalador desde [python.org/downloads](https://www.python.org/downloads/). En la primera pantalla del instalador, marca **"Add Python to PATH"** antes de continuar. Sin esta opción el sistema no funcionará.
-- **Mac:** Descarga el instalador desde [python.org/downloads](https://www.python.org/downloads/) y ejecútalo.
-- **Linux (Ubuntu/Debian):**
-  ```bash
-  sudo apt update && sudo apt install python3 python3-pip
-  ```
-
-> 💡 **Cómo abrir la terminal:**
-> - **Windows:** Busca "Símbolo del sistema" o "PowerShell" en el menú Inicio, o en el Explorador de Archivos haz clic en la barra de dirección, escribe `cmd` y presiona Enter.
-> - **Mac:** Busca "Terminal" en Spotlight (Cmd + Espacio).
-> - **Linux:** Ctrl + Alt + T.
-
 ---
 
 ### 14.2 Descargar el Proyecto
 
-**Si te dieron un archivo `.zip`:**
-1. Descomprime el archivo en una carpeta que recuerdes, por ejemplo: `Documentos/rag-reglamento`
-2. Abre la terminal y navega hasta esa carpeta:
-   ```bash
-   # En Mac / Linux
-   cd ~/Documentos/rag-reglamento
-
-   # En Windows
-   cd C:\Users\TuNombre\Documentos\rag-reglamento
-   ```
-
-**Si el proyecto está en GitHub:**
+**Clona el proyecto de GitHub:**
 ```bash
 git clone https://github.com/tu-usuario/rag-reglamento.git
 cd rag-reglamento
@@ -778,23 +754,13 @@ Para verificar que estás en la carpeta correcta, escribe `ls` (Mac/Linux) o `di
 
 ### 14.3 Instalar las Librerías del Proyecto
 
-El sistema necesita paquetes adicionales de Python. Instálalos todos con este comando (cópialo tal cual, con los corchetes incluidos):
+El sistema necesita paquetes adicionales de Python. Instálalos todos con este comando (cópialo tal cual):
 
 ```bash
-pip install streamlit faiss-cpu requests numpy pypdf python-docx
-```
-
-Luego, si también vas a usar la evaluación automática con RAGAS:
-
-```bash
-pip install ragas langchain-community tabulate
+pip install -r requirements.txt
 ```
 
 La instalación puede tardar entre 2 y 5 minutos dependiendo de tu internet. Verás texto desfilando en la terminal; es normal. Cuando termine y veas el cursor de nuevo, está listo.
-
->  Si aparece el error `pip: command not found`, prueba con `pip3` en lugar de `pip`.
-
----
 
 ### 14.4 Instalar Ollama
 
@@ -933,9 +899,9 @@ Así se ve la interfaz cuando carga:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  SIDEBAR                    │  ÁREA PRINCIPAL               │
+│  Panel lateral              │  ÁREA PRINCIPAL               │
 │                             │                               │
-│  ● Ollama activo            │   RAG · Asistente  🔭         │
+│  ● Ollama activo            │   RAG · Asistente           │
 │  ● Índice disponible        │                               │
 │                             │   [historial de mensajes]     │
 │  Modelo LLM: [mistral ▼]   │                               │
@@ -1070,7 +1036,7 @@ python evaluate_rag.py
 
 Este script corre 8 preguntas de prueba (literales, semánticas, multi-chunk y de alucinación), las evalúa con el framework RAGAS y muestra una tabla de resultados. Al final genera un archivo `resultados_ragas_final.csv` con todos los datos.
 
-> ⚠️ Este paso requiere que el índice esté construido (`python main.py --index`) y que Ollama esté corriendo.
+> Este paso requiere que el índice esté construido (`python main.py --index`) y que Ollama esté corriendo.
 
 ---
 
