@@ -29,7 +29,7 @@
 
 ## 1. ¿Qué hace este sistema?
 
-Este proyecto implementa un **asistente conversacional** que responde preguntas sobre un reglamento académico (o cualquier conjunto de documentos) usando la técnica **RAG (Retrieval-Augmented Generation)**. En lugar de dejar que el modelo de lenguaje invente respuestas de memoria, el sistema:
+Este proyecto implementa un asistente conversacional que responde preguntas sobre un reglamento académico  usando la técnica **RAG **. En lugar de dejar que el modelo de lenguaje invente respuestas de memoria, el sistema:
 
 1. Divide el reglamento en fragmentos pequeños y los convierte en vectores numéricos.
 2. Cuando llega una pregunta, busca los fragmentos más relevantes por **significado** (no por palabras exactas).
@@ -48,8 +48,8 @@ El resultado es un sistema que entiende preguntas coloquiales ("¿qué pasa si m
 │                                                                 │
 │  docs/                                                          │
 │  ├── reglamento.pdf   ──┐                                       │
-│  ├── syllabus.txt     ──┤──▶ document_loader.py                 │
-│  └── programa.docx   ──┘         │                             │
+│  ├── syllabus.txt     ──┤──▶ document_loader.py                │
+│  └── programa.docx   ──┘         │                              │
 │                                  │ clean_text() + chunk_text() │
 │                                  ▼                              │
 │                           Chunks de texto                       │
@@ -96,7 +96,7 @@ rag-reglamento/
 │
 ├── app.py                  # Interfaz Streamlit (GUI)
 ├── main.py                 # CLI: indexar, consultar, modo interactivo
-├── rag_engine.py           # Motor RAG: prompt, LLM, orquestación
+├── rag_engine.py           # Motor RAG: prompt, LLM
 ├── vector_store.py         # FAISS: embeddings, índice, búsqueda
 ├── document_loader.py      # Carga y chunking de documentos
 ├── evaluate_rag.py         # Evaluación automática con RAGAS + Ollama
@@ -104,7 +104,7 @@ rag-reglamento/
 ├── docs/                   # Carpeta de documentos fuente
 │   └── reglamento.pdf      # (tus archivos aquí)
 │
-├── vector_db/              # Índice FAISS persistido (generado automáticamente)
+├── vector_db/              # Índice FAISS (generado automáticamente)
 │   ├── index.faiss
 │   └── metadata.json
 │
@@ -132,17 +132,16 @@ La elección de la interfaz gráfica se evaluó considerando cuatro opciones:
 
 **Streamlit fue elegido por las siguientes razones concretas:**
 
-**a) El chat con memoria es trivial.** `st.session_state` actúa como un diccionario persistente por sesión. Mantener el historial de mensajes, el estado del índice FAISS cargado y el modelo seleccionado son operaciones de una línea, sin patrones de estado complejos.
+**a) El chat con memoria es muy comun.** `st.session_state` actúa como un diccionario persistente por sesión. Mantener el historial de mensajes, el estado del índice FAISS cargado y el modelo seleccionado son operaciones de una línea, sin patrones de estado complejos.
 
 **b) La re-indexación dinámica desde la GUI.** El panel lateral permite subir documentos (`.txt`, `.pdf`, `.docx`), ajustar `chunk_size` y `overlap` con sliders, y disparar la re-indexación completa desde el navegador. En Gradio esto requeriría lógica de estado más elaborada; en PyQt requeriría hilos y señales.
 
-**c) El CSS personalizado es suficientemente flexible.** El sistema usa un tema dark completo (variables `--bg`, `--surface`, `--accent`, etc.), fuentes DM Sans/DM Mono y burbujas de chat con bordes coloreados. Streamlit acepta `st.markdown(..., unsafe_allow_html=True)` para inyectar HTML/CSS arbitrario, suficiente para este nivel de personalización sin perder la productividad del framework.
+**c) El CSS personalizado es suficientemente flexible.** El sistema usa un tema dark completo (variables `--bg`, `--surface`, `--accent`, etc.), fuentes DM Sans/DM Mono y burbujas de chat con bordes coloreados. Streamlit acepta `st.markdown(..., unsafe_allow_html=True)` para inyectar HTML/CSS , suficiente para crear una buena interfaz personalizada sin perder la productividad del framework.
 
-**d) Es el estándar de facto para prototipos de ML/IA.** Los evaluadores, profesores y colegas pueden ejecutarlo con un solo comando (`streamlit run app.py`) sin instalar runtimes, compilar código ni configurar entornos de escritorio.
-
+**d) Es facil de usar ** Cualquier persona puede ejecutarlo con un solo comando (`streamlit run app.py`) sin instalar runtimes ni compilar código.
 **Gradio** habría sido la segunda opción, pero su modelo de componentes está orientado a demos de modelos individuales (una entrada, una salida), no a aplicaciones con estado complejo como un chat con panel lateral, múltiples métricas y re-indexación.
 
-**PyQt / CustomTkinter** fueron descartados porque el objetivo es un prototipo funcional demostrable, no una aplicación de escritorio distribuible. Requieren empaquetado (PyInstaller), dependen del sistema operativo y no permiten demos remotas fácilmente.
+**PyQt / CustomTkinter** fueron descartados porque el objetivo es un prototipo funcional demostrable, no una aplicación de escritorio. Requieren empaquetado (PyInstaller), dependen del sistema operativo y no permiten demos remotas fácilmente.
 
 ---
 
@@ -200,22 +199,22 @@ embeddings_juez = LangchainEmbeddingsWrapper(
 )
 ```
 
-RAGAS (el framework de evaluación) necesita un LLM para calcular métricas como `Faithfulness` y `AnswerRelevancy`. La alternativa oficial de RAGAS es usar GPT-4 de OpenAI, lo que crea una dependencia costosa y externa.
+RAGASnecesita un LLM para calcular métricas como `Faithfulness` y `AnswerRelevancy`. La alternativa oficial de RAGAS es usar GPT-4 de OpenAI, lo que crea una dependencia costosa y externa.
 
 **Usar Ollama como juez resuelve esto porque:**
 
-- **Consistencia de entorno:** El mismo runtime que genera las respuestas las evalúa. No hay diferencias de comportamiento entre entornos.
+- **Consistencia de entorno:** El mismo sistema que genera las respuestas las evalúa. No hay diferencias de comportamiento entre tecnologias.
 - **Evaluación offline:** La evaluación completa (8 muestras, 3 métricas) corre sin internet.
 - **Reproducibilidad:** Con `temperature: 0` el juicio del LLM es determinista, lo que permite comparar resultados entre ejecuciones.
 - **Sin costos:** Evaluar 8 muestras con GPT-4 costaría aproximadamente $0.05–$0.20 por ejecución. Con Ollama: $0.
 
-El único trade-off es que Mistral local puede ser menos preciso que GPT-4 al evaluar sutilezas semánticas, pero para un prototipo académico la diferencia es aceptable.
+El único problema es que Mistral local puede ser menos preciso que GPT-4 al evaluar sutilezas semánticas, pero para un proyecto academico no hay problema.
 
 ---
 
 ### 4.3 Por qué FAISS como Base de Datos Vectorial
 
-FAISS (Facebook AI Similarity Search) es la biblioteca de búsqueda vectorial de Meta, diseñada específicamente para encontrar los vecinos más cercanos en espacios de alta dimensión de forma eficiente.
+FAISS  es la biblioteca de búsqueda vectorial de Meta, diseñada específicamente para encontrar los vecinos más cercanos en espacios de alta dimensión de forma eficiente.
 
 Las alternativas evaluadas fueron:
 
@@ -240,7 +239,7 @@ self.index = faiss.IndexFlatIP(self.dimension)   # ← Inner Product = coseno
 self.index.add(vectors)
 ```
 
-**b) Persistencia simple y transparente.** El índice se guarda en dos archivos: `index.faiss` (los vectores compilados en formato binario optimizado) y `metadata.json` (el texto original y la fuente de cada chunk). No hay base de datos, no hay servidor, no hay Docker. Esto facilita la depuración, el versionado con Git y la portabilidad.
+**b) Persistencia simple y transparente.** El índice se guarda en dos archivos: `index.faiss` (los vectores compilados en formato binario) y `metadata.json` (el texto original y la fuente de cada chunk). No hay base de datos, no hay servidor, no hay Docker. Esto facilita la depuración.
 
 ```python
 def save(self, directory: str):
@@ -254,7 +253,7 @@ def load(self, directory: str):
         self.entries = json.load(f)
 ```
 
-**c) Escala suficiente para el caso de uso.** Un reglamento académico tiene típicamente 50–500 páginas, lo que genera entre 200 y 2.000 chunks. `IndexFlatIP` (búsqueda exacta, fuerza bruta) es más que suficiente para este volumen: busca en 2.000 vectores en milisegundos. Las variantes aproximadas de FAISS (`IndexIVFFlat`, `HNSW`) solo aportan ventaja con millones de vectores.
+**c) Escala suficiente para el caso de uso.** Un reglamento académico puede tener muchas paginas, lo que puede generar entre 200 y 2.000 chunks. `IndexFlatIP` (búsqueda exacta, fuerza bruta) es más que suficiente para este volumen: busca en 2.000 vectores en milisegundos. Las variantes aproximadas de FAISS (`IndexIVFFlat`, `HNSW`) solo aportan ventaja con millones de vectores.
 
 **d) Sin overhead de servidor.** ChromaDB funciona bien, pero incluye una capa de persistencia SQLite y una API HTTP interna que añade latencia para volúmenes pequeños. FAISS opera directamente sobre arrays NumPy en memoria, con cero overhead de serialización durante la búsqueda.
 
@@ -282,8 +281,8 @@ EMBEDDING_MODEL = "mxbai-embed-large"
 **`mxbai-embed-large` fue elegido porque:**
 
 - **Corre completamente local vía Ollama**, sin API keys ni costos. Se descarga con `ollama pull mxbai-embed-large`.
-- **Excelente soporte para español** en contextos académicos. A diferencia de `all-MiniLM-L6-v2` (entrenado principalmente en inglés), `mxbai-embed-large` fue entrenado en corpus multilenguaje con cobertura robusta del español.
-- **Alta capacidad semántica**: captura sinónimos y paráfrasis con precisión. "Perder la materia" → "cancelación por bajo rendimiento" obtiene scores de similitud coseno superiores a 0.85.
+- **Excelente soporte para español** en contextos académicos. A diferencia de `all-MiniLM-L6-v2` (entrenado principalmente en inglés), `mxbai-embed-large` fue entrenado en textos multilenguaje con cobertura robusta del español.
+- **Alta capacidad semántica**: captura sinónimos y paráfraseos con precisión. "Perder la materia" → "cancelación por bajo rendimiento" obtiene scores de similitud coseno superiores a 0.85.
 - **Integración directa con el pipeline**: usa la misma API de Ollama (`/api/embed`) que el LLM generador, simplificando la configuración y el manejo de errores.
 
 > **Nota sobre `nomic-embed-text`:** También aparece en el código (en `evaluate_rag.py`, como embedding del juez RAGAS). Se usa ahí porque RAGAS lo requiere para calcular `AnswerRelevancy` mediante similitud semántica entre la pregunta y la respuesta generada. Ambos modelos coexisten en el sistema con roles distintos.
@@ -416,7 +415,7 @@ def build_index(self, chunks: List[Chunk]):
     self.index.add(vectors)
 ```
 
-**La normalización L2 es el paso más importante.** Sin ella, `IndexFlatIP` calcularía distancia euclidiana, que no es adecuada para comparar embeddings (dos textos similares pueden tener magnitudes diferentes). Al normalizar, todos los vectores tienen longitud 1, y el producto interno pasa a ser idéntico a la similitud coseno: `cos(θ) = (a · b) / (|a| × |b|)` donde `|a| = |b| = 1`.
+**La normalización L2 es el paso más importante.** Sin ella, `IndexFlatIP` calcularía un calculo incorrecto, que no es adecuado para comparar embeddings (dos textos similares pueden tener significados diferentes). Al normalizar, todos los vectores tienen longitud 1, y el producto interno pasa a ser idéntico a la similitud coseno: `cos(θ) = (a · b) / (|a| × |b|)` donde `|a| = |b| = 1`.
 
 ### 6.3 Búsqueda por Similitud
 
@@ -436,7 +435,7 @@ def search(self, query: str, top_k: int = 5, min_score: float = 0.71):
     return resultados
 ```
 
-El parámetro `min_score` actúa como un filtro de calidad: si ningún chunk supera el umbral de similitud (0.71 en `rag_engine.py`, configurable), la lista de resultados queda vacía y el sistema responde con la frase de respaldo en lugar de generar una respuesta con contexto irrelevante.
+El parámetro `min_score` actúa como un filtro de calidad: si ningún chunk supera el umbral de similitud (0.65 en `rag_engine.py`, configurable), la lista de resultados queda vacía y el sistema responde con la frase de respaldo en lugar de generar una respuesta con contexto irrelevante.
 
 ---
 
