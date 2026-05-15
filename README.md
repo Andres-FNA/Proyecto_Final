@@ -1,4 +1,4 @@
-# 🔭 Sistema RAG — Asistente de Reglamento Académico
+#  Sistema RAG — Asistente de Reglamento Académico
 
 > Retrieval-Augmented Generation completamente local, sin APIs externas, sin alucinaciones.
 
@@ -23,6 +23,7 @@
 11. [Evaluación con RAGAS](#11-evaluación-con-ragas)
 12. [Instalación y uso](#12-instalación-y-uso)
 13. [Parámetros configurables](#13-parámetros-configurables)
+14. [Guía de uso paso a paso](#14-guía-de-uso-paso-a-paso)
 
 ---
 
@@ -715,8 +716,403 @@ Los parámetros `CHUNK_SIZE` y `OVERLAP` también se pueden ajustar en tiempo re
 
 ---
 
-## Autores y Contexto
+## 14. Guía de Uso Paso a Paso
 
-Sistema desarrollado como proyecto académico de implementación de técnicas de Inteligencia Artificial Generativa (RAG) aplicadas a la consulta de documentos reglamentarios universitarios.
+> Esta sección explica cómo instalar y usar el sistema desde cero, como si nunca hubieras trabajado con Python, Ollama o inteligencia artificial.
 
-**Stack completo:** Python · Streamlit · FAISS · Ollama · Mistral · mxbai-embed-large · RAGAS · pypdf · python-docx
+### ¿Qué necesitas antes de empezar?
+
+- Una computadora con Windows, Mac o Linux
+- Conexión a internet (solo para la instalación; después todo corre sin internet)
+- Al menos **8 GB de RAM** libre
+- Al menos **5 GB de espacio libre** en disco
+
+---
+
+### 14.1 Instalar Python
+
+Python es el lenguaje en que está escrito el sistema. Necesitas la versión **3.10 o superior**.
+
+**¿Ya lo tienes instalado?** Abre una terminal y escribe:
+
+```bash
+python --version
+```
+
+Si ves algo como `Python 3.11.4`, ya está listo. Si ves un error, instálalo:
+
+- **Windows:** Descarga el instalador desde [python.org/downloads](https://www.python.org/downloads/). En la primera pantalla del instalador, marca **"Add Python to PATH"** antes de continuar. Sin esta opción el sistema no funcionará.
+- **Mac:** Descarga el instalador desde [python.org/downloads](https://www.python.org/downloads/) y ejecútalo.
+- **Linux (Ubuntu/Debian):**
+  ```bash
+  sudo apt update && sudo apt install python3 python3-pip
+  ```
+
+> 💡 **Cómo abrir la terminal:**
+> - **Windows:** Busca "Símbolo del sistema" o "PowerShell" en el menú Inicio, o en el Explorador de Archivos haz clic en la barra de dirección, escribe `cmd` y presiona Enter.
+> - **Mac:** Busca "Terminal" en Spotlight (Cmd + Espacio).
+> - **Linux:** Ctrl + Alt + T.
+
+---
+
+### 14.2 Descargar el Proyecto
+
+**Si te dieron un archivo `.zip`:**
+1. Descomprime el archivo en una carpeta que recuerdes, por ejemplo: `Documentos/rag-reglamento`
+2. Abre la terminal y navega hasta esa carpeta:
+   ```bash
+   # En Mac / Linux
+   cd ~/Documentos/rag-reglamento
+
+   # En Windows
+   cd C:\Users\TuNombre\Documentos\rag-reglamento
+   ```
+
+**Si el proyecto está en GitHub:**
+```bash
+git clone https://github.com/tu-usuario/rag-reglamento.git
+cd rag-reglamento
+```
+
+Para verificar que estás en la carpeta correcta, escribe `ls` (Mac/Linux) o `dir` (Windows). Deberías ver los archivos del proyecto: `app.py`, `main.py`, `rag_engine.py`, etc.
+
+---
+
+### 14.3 Instalar las Librerías del Proyecto
+
+El sistema necesita paquetes adicionales de Python. Instálalos todos con este comando (cópialo tal cual, con los corchetes incluidos):
+
+```bash
+pip install streamlit faiss-cpu requests numpy pypdf python-docx
+```
+
+Luego, si también vas a usar la evaluación automática con RAGAS:
+
+```bash
+pip install ragas langchain-community tabulate
+```
+
+La instalación puede tardar entre 2 y 5 minutos dependiendo de tu internet. Verás texto desfilando en la terminal; es normal. Cuando termine y veas el cursor de nuevo, está listo.
+
+>  Si aparece el error `pip: command not found`, prueba con `pip3` en lugar de `pip`.
+
+---
+
+### 14.4 Instalar Ollama
+
+Ollama es el programa que corre los modelos de inteligencia artificial en tu computadora. Sin él, el sistema no puede generar respuestas.
+
+**Windows:**
+1. Ve a [https://ollama.ai](https://ollama.ai)
+2. Haz clic en el botón de descarga para Windows
+3. Ejecuta el instalador `.exe` descargado y sigue los pasos (siguiente, siguiente, instalar)
+4. Al terminar, Ollama queda corriendo en segundo plano automáticamente
+
+**Mac:**
+1. Ve a [https://ollama.ai](https://ollama.ai)
+2. Descarga la app para Mac (`.dmg`)
+3. Arrastra Ollama a tu carpeta de Aplicaciones y ábrela
+
+**Linux:**
+```bash
+curl -fsSL https://ollama.ai/install.sh | sh
+```
+
+**¿Cómo saber si Ollama está funcionando?** Abre el navegador y ve a [http://localhost:11434](http://localhost:11434). Si ves el texto `Ollama is running`, está activo.
+
+---
+
+### 14.5 Descargar los Modelos de IA
+
+El sistema necesita dos tipos de modelos: uno para entender el texto (embeddings) y otro para generar respuestas (LLM). Descárgalos con estos comandos en la terminal:
+
+```bash
+# Modelo de embeddings — convierte texto en vectores
+ollama pull mxbai-embed-large
+
+# Modelo de lenguaje — genera las respuestas
+ollama pull mistral
+```
+
+Cada descarga pesa entre 1 y 5 GB, así que puede tardar varios minutos. Verás una barra de progreso en la terminal.
+
+> Solo necesitas hacer esta descarga **una vez**. Los modelos quedan guardados en tu computadora y no se necesita internet para usarlos después.
+
+**Verificar que los modelos quedaron instalados:**
+```bash
+ollama list
+```
+Deberías ver `mxbai-embed-large` y `mistral` (o el modelo que hayas descargado) en la lista.
+
+---
+
+### 14.6 Agregar tus Documentos
+
+El sistema necesita un documento para consultar. Puede ser el reglamento de tu universidad, un syllabus, una guía académica, o cualquier documento en formato `.pdf`, `.txt` o `.docx`.
+
+1. Dentro de la carpeta del proyecto, busca (o crea) una carpeta llamada **`docs`**
+2. Copia ahí tu documento:
+
+```
+rag-reglamento/
+└── docs/
+    └── reglamento.pdf      ← tu archivo aquí
+```
+
+Puedes agregar más de un documento. El sistema indexará todos los archivos que encuentre en esa carpeta.
+
+---
+
+### 14.7 Indexar los Documentos (crear la base de conocimiento)
+
+Este es el paso donde el sistema lee tus documentos, los divide en fragmentos y los convierte en vectores para poder buscar en ellos después. Solo necesitas hacerlo una vez, o cada vez que cambies los documentos.
+
+Asegúrate de que Ollama esté corriendo (Paso 14.4), luego en la terminal escribe:
+
+```bash
+python main.py --index
+```
+
+Verás en la terminal mensajes como estos, lo cual indica que todo va bien:
+
+```
+========================================================
+  FASE 1: CARGA DE DOCUMENTOS
+========================================================
+  [CARGADO] reglamento.pdf (PDF) — 48320 caracteres
+
+========================================================
+  FASE 2: CREACIÓN DE CHUNKS
+========================================================
+  [CHUNKED] reglamento.pdf → 87 chunks
+
+========================================================
+  FASE 3: VECTORIZACIÓN Y BASE DE DATOS VECTORIAL
+========================================================
+Vectorizando 87 chunks con 'mxbai-embed-large'...
+  87/87 vectorizados
+[OK] Índice FAISS construido con 87 vectores
+
+========================================================
+  FASE 4: GUARDADO EN DISCO
+========================================================
+[GUARDADO]
+FAISS: vector_db/index.faiss
+Metadata: vector_db/metadata.json
+
+  Indexación completada.
+    Documentos : 1
+    Chunks     : 87
+    Índice en  : vector_db/
+```
+
+Cuando termine, habrá una nueva carpeta `vector_db/` en el proyecto con los archivos del índice. **No borres esa carpeta.**
+
+>  Si ves el error `No se pudo conectar con Ollama`, significa que Ollama no está corriendo. Ábrelo desde el menú de aplicaciones de tu sistema operativo y vuelve a intentar.
+
+---
+
+### 14.8 Iniciar la Interfaz Gráfica
+
+Con el índice ya construido, puedes abrir la interfaz visual del sistema. En la terminal escribe:
+
+```bash
+streamlit run app.py
+```
+
+Verás un mensaje como este:
+
+```
+  You can now view your Streamlit app in your browser.
+
+  Local URL: http://localhost:8501
+  Network URL: http://192.168.1.x:8501
+```
+
+**El navegador se abrirá automáticamente** con la interfaz del asistente. Si no se abre solo, copia la dirección `http://localhost:8501` y pégala en tu navegador.
+
+Así se ve la interfaz cuando carga:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  SIDEBAR                    │  ÁREA PRINCIPAL               │
+│                             │                               │
+│  ● Ollama activo            │   RAG · Asistente  🔭         │
+│  ● Índice disponible        │                               │
+│                             │   [historial de mensajes]     │
+│  Modelo LLM: [mistral ▼]   │                               │
+│                             │                               │
+│  Subir documentos           │  [tu pregunta aquí...] Enviar │
+│  Chunk size: ──────── 600   │                               │
+│  Overlap:    ──── 150       │                               │
+│                             │                               │
+│   Re-indexar documentos   │                               │
+│   Cargar / recargar       │                               │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 14.9 Cargar el Sistema en la GUI
+
+Antes de hacer preguntas, necesitas cargar el índice en la interfaz. En el **panel lateral izquierdo**:
+
+1. Selecciona el modelo en el menú desplegable **"Modelo LLM"** (elige `mistral` o el que hayas descargado)
+2. Haz clic en el botón **" Cargar / recargar sistema"**
+3. Espera a que aparezca el mensaje de confirmación
+
+Cuando veas los dos indicadores verdes en la parte superior del panel lateral, el sistema está listo:
+
+```
+● Ollama activo
+● Índice disponible
+```
+
+---
+
+### 14.10 Hacer tu Primera Pregunta
+
+En la parte inferior de la pantalla encontrarás la barra de entrada de texto. Escribe tu pregunta en lenguaje natural, exactamente como la harías a una persona, y haz clic en **"Enviar →"**.
+
+**Ejemplos de preguntas que puedes probar:**
+
+```
+¿Cuál es el objetivo de la asignatura de Ingeniería de Software I?
+¿Qué pasa si pierdo una materia?
+¿Cuáles son los requisitos para el grado?
+¿Qué metodología de evaluación se usa?
+¿Cuántos créditos tiene el programa?
+```
+
+> No necesitas usar términos técnicos ni exactamente las palabras del reglamento. El sistema entiende sinónimos y lenguaje coloquial. Puedes preguntar "¿qué pasa si me echan?" y va a entender que preguntas por exclusión académica.
+
+---
+
+### 14.11 Entender la Respuesta y sus Métricas
+
+Después de unos segundos, el asistente responderá. La respuesta tiene varias partes:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ RAG                                                         │
+│                                                             │
+│ El objetivo de la asignatura es presentar metodologías,     │
+│ procesos y herramientas de buenas prácticas de Ingeniería   │
+│ de Software para participar en proyectos de desarrollo.     │
+│                                                             │
+│ reglamento.pdf · chunk #12  87%    reglamento.pdf · chunk #13  81%  │
+│                                                             │
+│ ┌─────────────┬──────────────┬──────────────┐              │
+│ │ Relevancia  │ Cobertura    │ Confianza    │              │
+│ │    87%      │    80%       │    85%       │              │
+│ └─────────────┴──────────────┴──────────────┘              │
+│                                                             │
+│ 14:32:05 · modelo: mistral                                  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**¿Qué significa cada parte?**
+
+- **El texto de la respuesta:** Lo que el sistema encontró en el reglamento. Si dice *"No tengo información sobre ese tema en los documentos disponibles"*, significa que la pregunta no está cubierta en los documentos que indexaste, y el sistema prefirió no inventar una respuesta.
+
+- **Los chips de fuentes** (` reglamento.pdf · chunk #12  87%`): Te indican de qué documento y qué fragmento exacto proviene la respuesta, y con qué porcentaje de similitud fue encontrado. Puedes hacer clic en **" Ver N fragmentos recuperados"** para leer el texto original.
+
+- **Las métricas:**
+  - **Relevancia:** Qué tan relacionados eran los fragmentos encontrados con tu pregunta (más alto = mejor)
+  - **Cobertura:** Qué porcentaje de los fragmentos recuperados tenían información útil
+  - **Confianza:** Puntuación global de confiabilidad de la respuesta
+  - **Latencia:** Cuántos segundos tardó el sistema en responder
+
+---
+
+### 14.12 Agregar Nuevos Documentos sin Reiniciar
+
+Si quieres agregar un nuevo documento al sistema sin cerrar la interfaz:
+
+1. En el **panel lateral**, busca la sección **"Subir documentos"**
+2. Haz clic en **"Arrastra o selecciona archivos"** y selecciona tu archivo (`.pdf`, `.txt` o `.docx`)
+3. El archivo aparecerá confirmado con un ✔
+4. Opcionalmente ajusta los sliders de **Chunk size** y **Overlap** si lo deseas (los valores por defecto funcionan bien)
+5. Haz clic en **" Re-indexar documentos"**
+6. Espera a que aparezca el mensaje de éxito con el número de documentos y chunks procesados
+7. El sistema recarga automáticamente con el nuevo índice — ya puedes hacer preguntas sobre el nuevo documento
+
+---
+
+### 14.13 Usar el Sistema desde la Terminal (sin interfaz gráfica)
+
+Si prefieres no usar el navegador, puedes hacer preguntas directamente desde la terminal:
+
+**Pregunta directa (una sola pregunta y termina):**
+```bash
+python main.py --query "¿Cuál es el objetivo de la asignatura?"
+```
+
+**Modo conversación (escribe varias preguntas seguidas):**
+```bash
+python main.py --interactive
+```
+
+En modo interactivo, el sistema te pedirá preguntas una por una. Para salir, escribe `salir`.
+
+**Especificar un modelo concreto:**
+```bash
+python main.py --interactive --model mistral
+```
+
+---
+
+### 14.14 Ejecutar la Evaluación Automática
+
+Si quieres medir qué tan bien está respondiendo el sistema con casos de prueba predefinidos:
+
+```bash
+python evaluate_rag.py
+```
+
+Este script corre 8 preguntas de prueba (literales, semánticas, multi-chunk y de alucinación), las evalúa con el framework RAGAS y muestra una tabla de resultados. Al final genera un archivo `resultados_ragas_final.csv` con todos los datos.
+
+> ⚠️ Este paso requiere que el índice esté construido (`python main.py --index`) y que Ollama esté corriendo.
+
+---
+
+### 14.15 Cómo Detener el Sistema
+
+- **Para cerrar la interfaz Streamlit:** Ve a la terminal donde corre y presiona `Ctrl + C`
+- **Para cerrar Ollama:**
+  - Windows: Clic derecho en el ícono de Ollama en la barra de tareas → Quit
+  - Mac: Clic en el ícono de Ollama en la barra de menú → Quit
+  - Linux: `pkill ollama`
+
+La próxima vez que quieras usar el sistema, solo necesitas:
+1. Abrir Ollama (o `ollama serve` en Linux)
+2. En la terminal del proyecto: `streamlit run app.py`
+
+El índice ya estará construido; no necesitas volver a indexar a menos que cambies los documentos.
+
+---
+
+### 14.16 Solución a Problemas Comunes
+
+** Error: `No se pudo conectar con Ollama`**
+> Ollama no está corriendo. Ábrelo desde el menú de aplicaciones o ejecuta `ollama serve` en una terminal separada y vuelve a intentar.
+
+** Error: `No hay modelos instalados`**
+> Abre una terminal y ejecuta `ollama pull mistral` y `ollama pull mxbai-embed-large`. Espera a que terminen de descargar.
+
+**Error: `No existe: vector_db/index.faiss`**
+> El índice no ha sido construido todavía. Ejecuta `python main.py --index` primero.
+
+** Error: `ModuleNotFoundError: No module named 'streamlit'`**
+> Las librerías no están instaladas. Ejecuta `pip install streamlit faiss-cpu requests numpy pypdf python-docx` y vuelve a intentar.
+
+** La interfaz abre en el navegador pero el chat dice "Sistema no cargado"**
+> Haz clic en el botón **" Cargar / recargar sistema"** en el panel lateral izquierdo.
+
+** El sistema responde "No tengo información" a preguntas que sí están en el documento**
+> El documento puede no haberse indexado correctamente. Prueba re-indexando: en la GUI, haz clic en " Re-indexar documentos", o desde la terminal: `python main.py --index`.
+
+** La respuesta tarda más de 2 minutos**
+> El modelo puede ser muy grande para tu computadora. Prueba con un modelo más ligero: `ollama pull tinyllama` y selecciónalo en el desplegable de la GUI.
+
+---
