@@ -656,8 +656,7 @@ ollama serve
 git clone <repo>
 cd rag-reglamento
 
-pip install streamlit faiss-cpu requests numpy pypdf python-docx
-pip install ragas langchain-community tabulate  # solo para evaluación
+pip install -r requirements.txt
 ```
 
 ### Indexar documentos
